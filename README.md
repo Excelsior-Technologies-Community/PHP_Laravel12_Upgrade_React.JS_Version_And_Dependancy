@@ -24,7 +24,7 @@ npm install react@16.14.0 react-dom@16.14.0
 npm remove react react-dom
 ```
 # Step 6 : Now Check Remove Old version react.js 
-# Opne Terminal and run command
+# Open Terminal and run command
 ```php
 npm list react react-dom
 ```
