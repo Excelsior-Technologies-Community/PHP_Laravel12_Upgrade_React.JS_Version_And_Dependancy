@@ -12,6 +12,7 @@
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^2.0.0",
         "tailwindcss": "^4.0.0",
+<<<<<<< HEAD
         "vite": "^7.0.7"
 
      },  
@@ -21,6 +22,13 @@
      }
  }
 
+=======
+        "vite": "^7.3.0"
+    },
+    "dependencies": {
+        "react": "^16.14.0",
+        "react-dom": "^16.14.0"
+>>>>>>> development
     }
 }
 
