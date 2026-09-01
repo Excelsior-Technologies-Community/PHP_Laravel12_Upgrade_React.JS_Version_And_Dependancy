@@ -10,20 +10,30 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', [ProductWebController::class, 'index'])
-    ->name('products.index');
+Route::get(
+    '/',
+    [ProductWebController::class, 'index']
+)->name('products.index');
 
-Route::get('/products/{product}/edit', [ProductWebController::class, 'edit'])
-    ->name('products.edit');
+Route::get(
+    '/products/{product}/edit',
+    [ProductWebController::class, 'edit']
+)->name('products.edit');
 
-Route::post('/products', [ProductWebController::class, 'store'])
-    ->name('products.store');
+Route::post(
+    '/products',
+    [ProductWebController::class, 'store']
+)->name('products.store');
 
-Route::put('/products/{product}', [ProductWebController::class, 'update'])
-    ->name('products.update');
+Route::put(
+    '/products/{product}',
+    [ProductWebController::class, 'update']
+)->name('products.update');
 
-Route::delete('/products/{product}', [ProductWebController::class, 'destroy'])
-    ->name('products.destroy');
+Route::delete(
+    '/products/{product}',
+    [ProductWebController::class, 'destroy']
+)->name('products.destroy');
 
 
 /*
@@ -32,21 +42,22 @@ Route::delete('/products/{product}', [ProductWebController::class, 'destroy'])
 |--------------------------------------------------------------------------
 */
 
-Route::get('/dependencies', [DependencyController::class, 'index'])
-    ->name('dependencies.index');
+Route::get(
+    '/dependencies',
+    [DependencyController::class, 'index']
+)->name('dependencies.index');
 
 
 /*
 |--------------------------------------------------------------------------
 | Dependency Health Check
 |--------------------------------------------------------------------------
-|
-| Runs the local npm dependency health check.
-|
 */
 
-Route::get('/dependencies/health-check', [DependencyController::class, 'check'])
-    ->name('dependencies.check');
+Route::get(
+    '/dependencies/health-check',
+    [DependencyController::class, 'check']
+)->name('dependencies.check');
 
 
 /*
@@ -55,26 +66,57 @@ Route::get('/dependencies/health-check', [DependencyController::class, 'check'])
 |--------------------------------------------------------------------------
 */
 
-Route::post('/dependencies/{package}/upgrade', [DependencyController::class, 'upgrade'])
+Route::post(
+    '/dependencies/{package}/upgrade',
+    [DependencyController::class, 'upgrade']
+)
     ->where('package', '.*')
     ->name('dependencies.upgrade');
 
 
 /*
 |--------------------------------------------------------------------------
-| Delete History
+| Export Dependency History
 |--------------------------------------------------------------------------
 */
 
-Route::delete('/dependencies/history/{history}', [DependencyController::class, 'destroy'])
-    ->name('dependencies.history.destroy');
+Route::get(
+    '/dependencies/history/export',
+    [DependencyController::class, 'exportHistory']
+)->name('dependencies.history.export');
 
 
 /*
 |--------------------------------------------------------------------------
-| Clear History
+| Bulk Delete Dependency History
 |--------------------------------------------------------------------------
 */
 
-Route::delete('/dependencies/history', [DependencyController::class, 'clearHistory'])
-    ->name('dependencies.history.clear');
+Route::delete(
+    '/dependencies/history/bulk-delete',
+    [DependencyController::class, 'bulkDelete']
+)->name('dependencies.history.bulk-delete');
+
+
+/*
+|--------------------------------------------------------------------------
+| Delete Single History
+|--------------------------------------------------------------------------
+*/
+
+Route::delete(
+    '/dependencies/history/{history}',
+    [DependencyController::class, 'destroy']
+)->name('dependencies.history.destroy');
+
+
+/*
+|--------------------------------------------------------------------------
+| Clear All History
+|--------------------------------------------------------------------------
+*/
+
+Route::delete(
+    '/dependencies/history',
+    [DependencyController::class, 'clearHistory']
+)->name('dependencies.history.clear');

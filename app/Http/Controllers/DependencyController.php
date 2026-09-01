@@ -5,19 +5,25 @@ namespace App\Http\Controllers;
 use App\Models\DependencyUpgradeHistory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Process;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DependencyController extends Controller
 {
     /**
-     * Absolute path to Windows npm executable.
+     * =========================================================
+     * NPM PATH
+     * =========================================================
      */
     private function npmPath(): string
     {
         $paths = [
             'C:\\Program Files\\nodejs\\npm.cmd',
             'C:\\laragon\\bin\\nodejs\\node-v18\\npm.cmd',
+            'C:\\laragon\\bin\\nodejs\\node-v20\\npm.cmd',
+            'C:\\laragon\\bin\\nodejs\\node-v22\\npm.cmd',
         ];
 
         foreach ($paths as $path) {
@@ -32,32 +38,170 @@ class DependencyController extends Controller
     }
 
     /**
-     * Dependency dashboard.
+     * =========================================================
+     * DEPENDENCY DASHBOARD
+     * =========================================================
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        return view('dependencies.index', [
-            'histories' => DependencyUpgradeHistory::latest()->get(),
-        ]);
+        /*
+        |--------------------------------------------------------------------------
+        | History Search
+        |--------------------------------------------------------------------------
+        */
+        $historyQuery = DependencyUpgradeHistory::query();
+
+        if ($request->filled('history_search')) {
+            $search = trim($request->history_search);
+
+            $historyQuery->where(function ($query) use ($search) {
+                $query->where(
+                    'package_name',
+                    'like',
+                    "%{$search}%"
+                )->orWhere(
+                    'old_version',
+                    'like',
+                    "%{$search}%"
+                )->orWhere(
+                    'new_version',
+                    'like',
+                    "%{$search}%"
+                )->orWhere(
+                    'message',
+                    'like',
+                    "%{$search}%"
+                );
+            });
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | History Status Filter
+        |--------------------------------------------------------------------------
+        */
+        if ($request->filled('history_status')) {
+            $historyQuery->where(
+                'status',
+                $request->history_status
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | History Sorting
+        |--------------------------------------------------------------------------
+        */
+        $historySort = $request->get(
+            'history_sort',
+            'created_at'
+        );
+
+        $historyOrder = $request->get(
+            'history_order',
+            'desc'
+        );
+
+        $allowedHistorySorts = [
+            'package_name',
+            'old_version',
+            'new_version',
+            'status',
+            'created_at',
+        ];
+
+        if (! in_array(
+            $historySort,
+            $allowedHistorySorts,
+            true
+        )) {
+            $historySort = 'created_at';
+        }
+
+        if (! in_array(
+            $historyOrder,
+            ['asc', 'desc'],
+            true
+        )) {
+            $historyOrder = 'desc';
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | History Pagination
+        |--------------------------------------------------------------------------
+        */
+        $histories = $historyQuery
+            ->orderBy(
+                $historySort,
+                $historyOrder
+            )
+            ->paginate(5, ['*'], 'history_page')
+            ->withQueryString();
+
+        /*
+        |--------------------------------------------------------------------------
+        | History Statistics
+        |--------------------------------------------------------------------------
+        */
+        $totalHistory = DependencyUpgradeHistory::count();
+
+        $successfulUpgrades =
+            DependencyUpgradeHistory::where(
+                'status',
+                'upgraded'
+            )->count();
+
+        $failedUpgrades =
+            DependencyUpgradeHistory::where(
+                'status',
+                'failed'
+            )->count();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Today's Upgrades
+        |--------------------------------------------------------------------------
+        */
+        $todayUpgrades =
+            DependencyUpgradeHistory::whereDate(
+                'created_at',
+                today()
+            )->count();
+
+        return view(
+            'dependencies.index',
+            compact(
+                'histories',
+                'totalHistory',
+                'successfulUpgrades',
+                'failedUpgrades',
+                'todayUpgrades'
+            )
+        );
     }
 
     /**
-     * Run local dependency integrity check.
-     *
-     * This does NOT use npm outdated.
-     * It does NOT contact the npm registry.
-     *
-     * It checks the locally installed node_modules tree.
+     * =========================================================
+     * LOCAL DEPENDENCY HEALTH CHECK
+     * =========================================================
      */
     public function check(): JsonResponse
     {
         try {
-            $packageJsonPath = base_path('package.json');
-            $nodeModulesPath = base_path('node_modules');
+            $packageJsonPath = base_path(
+                'package.json'
+            );
+
+            $nodeModulesPath = base_path(
+                'node_modules'
+            );
 
             /*
-             * Check package.json.
-             */
+            |--------------------------------------------------------------------------
+            | Check package.json
+            |--------------------------------------------------------------------------
+            */
             if (! file_exists($packageJsonPath)) {
                 return response()->json([
                     'success' => false,
@@ -74,10 +218,14 @@ class DependencyController extends Controller
             }
 
             /*
-             * Read package.json.
-             */
+            |--------------------------------------------------------------------------
+            | Read package.json
+            |--------------------------------------------------------------------------
+            */
             $packageJson = json_decode(
-                file_get_contents($packageJsonPath),
+                file_get_contents(
+                    $packageJsonPath
+                ),
                 true
             );
 
@@ -97,53 +245,70 @@ class DependencyController extends Controller
             }
 
             /*
-             * Combine normal and development dependencies.
-             */
+            |--------------------------------------------------------------------------
+            | Combine dependencies
+            |--------------------------------------------------------------------------
+            */
+            $normalDependencies =
+                $packageJson['dependencies'] ?? [];
+
+            $devDependencies =
+                $packageJson['devDependencies'] ?? [];
+
             $declaredDependencies = array_merge(
-                $packageJson['dependencies'] ?? [],
-                $packageJson['devDependencies'] ?? []
+                $normalDependencies,
+                $devDependencies
             );
 
-            $declaredCount = count($declaredDependencies);
+            $declaredCount =
+                count($declaredDependencies);
 
             /*
-             * node_modules must exist.
-             */
+            |--------------------------------------------------------------------------
+            | node_modules check
+            |--------------------------------------------------------------------------
+            */
             if (! is_dir($nodeModulesPath)) {
+                $dependencies = [];
+
+                foreach (
+                    $declaredDependencies
+                    as $package => $version
+                ) {
+                    $dependencies[] = [
+                        'name' => $package,
+                        'required' => $version,
+                        'installed' => null,
+                        'status' => 'missing',
+                        'type' =>
+                        isset(
+                            $devDependencies[$package]
+                        )
+                            ? 'devDependency'
+                            : 'dependency',
+                    ];
+                }
+
                 return response()->json([
                     'success' => true,
                     'healthy' => false,
                     'message' =>
-                        'node_modules directory was not found. Run npm install first.',
+                    'node_modules directory was not found. Run npm install first.',
                     'summary' => [
                         'declared' => $declaredCount,
                         'installed' => 0,
                         'missing' => $declaredCount,
                         'invalid' => 0,
                     ],
-                    'dependencies' => array_map(
-                        function ($version, $package) {
-                            return [
-                                'name' => $package,
-                                'required' => $version,
-                                'installed' => null,
-                                'status' => 'missing',
-                                'type' => 'dependency',
-                            ];
-                        },
-                        $declaredDependencies,
-                        array_keys($declaredDependencies)
-                    ),
+                    'dependencies' => $dependencies,
                 ]);
             }
 
             /*
-             * npm ls checks the local dependency tree.
-             *
-             * npm ls can return exit code 1 when missing or
-             * invalid dependencies exist. Therefore we inspect
-             * the JSON instead of relying only on successful().
-             */
+            |--------------------------------------------------------------------------
+            | npm ls
+            |--------------------------------------------------------------------------
+            */
             $result = Process::path(base_path())
                 ->timeout(120)
                 ->run([
@@ -153,32 +318,33 @@ class DependencyController extends Controller
                     '--json',
                 ]);
 
-            $output = trim($result->output());
+            $output = trim(
+                $result->output()
+            );
 
-            $errorOutput = trim($result->errorOutput());
+            $errorOutput = trim(
+                $result->errorOutput()
+            );
 
-            /*
-             * Prefer stdout.
-             */
-            $jsonOutput = $output !== ''
+            $jsonOutput =
+                $output !== ''
                 ? $output
                 : $errorOutput;
 
-            /*
-             * Decode npm response.
-             */
             $data = json_decode(
                 $jsonOutput,
                 true
             );
 
             /*
-             * If JSON cannot be decoded, perform a direct
-             * local filesystem check.
-             */
+            |--------------------------------------------------------------------------
+            | Fallback
+            |--------------------------------------------------------------------------
+            */
             if (! is_array($data)) {
                 return $this->localDependencyCheck(
                     $declaredDependencies,
+                    $devDependencies,
                     $declaredCount,
                     $errorOutput
                 );
@@ -193,6 +359,11 @@ class DependencyController extends Controller
             $invalidCount = 0;
             $installedCount = 0;
 
+            /*
+            |--------------------------------------------------------------------------
+            | Build dependency list
+            |--------------------------------------------------------------------------
+            */
             foreach (
                 $declaredDependencies
                 as $package => $requiredVersion
@@ -201,16 +372,25 @@ class DependencyController extends Controller
                     $installedDependencies[$package]
                     ?? null;
 
+                $type =
+                    isset(
+                        $devDependencies[$package]
+                    )
+                    ? 'devDependency'
+                    : 'dependency';
+
                 /*
-                 * Package does not exist.
-                 */
+                |--------------------------------------------------------------------------
+                | Missing
+                |--------------------------------------------------------------------------
+                */
                 if (! is_array($installed)) {
                     $dependencies[] = [
                         'name' => $package,
                         'required' => $requiredVersion,
                         'installed' => null,
                         'status' => 'missing',
-                        'type' => 'dependency',
+                        'type' => $type,
                     ];
 
                     $missingCount++;
@@ -219,15 +399,18 @@ class DependencyController extends Controller
                 }
 
                 $installedVersion =
-                    $installed['version'] ?? null;
+                    $installed['version']
+                    ?? null;
 
                 /*
-                 * npm marks problematic packages using
-                 * the "invalid" field.
-                 */
+                |--------------------------------------------------------------------------
+                | Invalid
+                |--------------------------------------------------------------------------
+                */
                 $isInvalid =
                     isset($installed['invalid'])
-                    || isset($installed['problems']);
+                    ||
+                    isset($installed['problems']);
 
                 if ($isInvalid) {
                     $dependencies[] = [
@@ -235,7 +418,7 @@ class DependencyController extends Controller
                         'required' => $requiredVersion,
                         'installed' => $installedVersion,
                         'status' => 'invalid',
-                        'type' => 'dependency',
+                        'type' => $type,
                     ];
 
                     $invalidCount++;
@@ -243,21 +426,27 @@ class DependencyController extends Controller
                     continue;
                 }
 
+                /*
+                |--------------------------------------------------------------------------
+                | Installed
+                |--------------------------------------------------------------------------
+                */
                 $dependencies[] = [
                     'name' => $package,
                     'required' => $requiredVersion,
                     'installed' => $installedVersion,
                     'status' => 'installed',
-                    'type' => 'dependency',
+                    'type' => $type,
                 ];
 
                 $installedCount++;
             }
 
             /*
-             * Sort:
-             * missing -> invalid -> installed
-             */
+            |--------------------------------------------------------------------------
+            | Sort Problems First
+            |--------------------------------------------------------------------------
+            */
             usort(
                 $dependencies,
                 function ($a, $b) {
@@ -273,8 +462,14 @@ class DependencyController extends Controller
                     $bPriority =
                         $priority[$b['status']] ?? 99;
 
-                    if ($aPriority !== $bPriority) {
-                        return $aPriority <=> $bPriority;
+                    if (
+                        $aPriority !==
+                        $bPriority
+                    ) {
+                        return
+                            $aPriority
+                            <=>
+                            $bPriority;
                     }
 
                     return strcasecmp(
@@ -285,17 +480,20 @@ class DependencyController extends Controller
             );
 
             $healthy =
-                $missingCount === 0 &&
+                $missingCount === 0
+                &&
                 $invalidCount === 0;
 
             /*
-             * Build message.
-             */
+            |--------------------------------------------------------------------------
+            | Message
+            |--------------------------------------------------------------------------
+            */
             if ($healthy) {
                 $message =
-                    "Dependency integrity is healthy. "
+                    'Dependency integrity is healthy. '
                     . $installedCount
-                    . " package(s) installed correctly.";
+                    . ' package(s) installed correctly.';
             } else {
                 $problems = [];
 
@@ -313,28 +511,25 @@ class DependencyController extends Controller
 
                 $message =
                     'Dependency integrity found: '
-                    . implode(', ', $problems)
+                    . implode(
+                        ', ',
+                        $problems
+                    )
                     . '.';
             }
 
             return response()->json([
                 'success' => true,
-
                 'healthy' => $healthy,
-
                 'message' => $message,
-
                 'summary' => [
                     'declared' => $declaredCount,
                     'installed' => $installedCount,
                     'missing' => $missingCount,
                     'invalid' => $invalidCount,
                 ],
-
                 'dependencies' => $dependencies,
-
             ]);
-
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
@@ -352,12 +547,13 @@ class DependencyController extends Controller
     }
 
     /**
-     * Direct local dependency check fallback.
-     *
-     * This does not use the npm registry.
+     * =========================================================
+     * LOCAL FILESYSTEM FALLBACK
+     * =========================================================
      */
     private function localDependencyCheck(
         array $declaredDependencies,
+        array $devDependencies,
         int $declaredCount,
         string $npmError = ''
     ): JsonResponse {
@@ -373,13 +569,27 @@ class DependencyController extends Controller
             $packagePath =
                 base_path(
                     'node_modules/'
-                    . str_replace('/', DIRECTORY_SEPARATOR, $package)
+                        .
+                        str_replace(
+                            '/',
+                            DIRECTORY_SEPARATOR,
+                            $package
+                        )
                 );
 
             $packageJson =
                 $packagePath
-                . DIRECTORY_SEPARATOR
-                . 'package.json';
+                .
+                DIRECTORY_SEPARATOR
+                .
+                'package.json';
+
+            $type =
+                isset(
+                    $devDependencies[$package]
+                )
+                ? 'devDependency'
+                : 'dependency';
 
             if (! file_exists($packageJson)) {
                 $dependencies[] = [
@@ -387,7 +597,7 @@ class DependencyController extends Controller
                     'required' => $requiredVersion,
                     'installed' => null,
                     'status' => 'missing',
-                    'type' => 'dependency',
+                    'type' => $type,
                 ];
 
                 $missingCount++;
@@ -402,7 +612,10 @@ class DependencyController extends Controller
 
             $installedVersion =
                 is_array($packageData)
-                ? ($packageData['version'] ?? null)
+                ? (
+                    $packageData['version']
+                    ?? null
+                )
                 : null;
 
             $dependencies[] = [
@@ -410,7 +623,7 @@ class DependencyController extends Controller
                 'required' => $requiredVersion,
                 'installed' => $installedVersion,
                 'status' => 'installed',
-                'type' => 'dependency',
+                'type' => $type,
             ];
 
             $installedCount++;
@@ -418,48 +631,47 @@ class DependencyController extends Controller
 
         usort(
             $dependencies,
-            fn ($a, $b) =>
-                strcasecmp($a['name'], $b['name'])
+            fn($a, $b) =>
+            strcasecmp(
+                $a['name'],
+                $b['name']
+            )
         );
 
-        $healthy = $missingCount === 0;
+        $healthy =
+            $missingCount === 0;
 
-        if ($healthy) {
-            $message =
-                "Local dependency integrity is healthy. "
-                . $installedCount
-                . " package(s) found.";
-        } else {
-            $message =
-                $missingCount
-                . " dependency(s) are missing from node_modules.";
-        }
+        $message =
+            $healthy
+            ? 'Local dependency integrity is healthy. '
+            . $installedCount
+            . ' package(s) found.'
+            : $missingCount
+            . ' dependency(s) are missing from node_modules.';
 
         return response()->json([
             'success' => true,
-
             'healthy' => $healthy,
-
             'message' => $message,
-
             'summary' => [
                 'declared' => $declaredCount,
                 'installed' => $installedCount,
                 'missing' => $missingCount,
                 'invalid' => 0,
             ],
-
             'dependencies' => $dependencies,
-
             'npm_error' => $npmError,
         ]);
     }
 
     /**
-     * Upgrade a selected npm dependency to latest.
+     * =========================================================
+     * UPGRADE DEPENDENCY
+     * =========================================================
      */
-    public function upgrade(string $package): JsonResponse
-    {
+    public function upgrade(
+        string $package
+    ): JsonResponse {
         if (
             ! preg_match(
                 '/^(?:@[a-z0-9._-]+\/)?[a-z0-9._-]+$/i',
@@ -477,7 +689,9 @@ class DependencyController extends Controller
 
         try {
             $before =
-                $this->getInstalledVersion($package);
+                $this->getInstalledVersion(
+                    $package
+                );
 
             $result = Process::path(base_path())
                 ->timeout(300)
@@ -489,7 +703,9 @@ class DependencyController extends Controller
                 ]);
 
             $after =
-                $this->getInstalledVersion($package);
+                $this->getInstalledVersion(
+                    $package
+                );
 
             if ($result->successful()) {
                 DependencyUpgradeHistory::create([
@@ -498,27 +714,32 @@ class DependencyController extends Controller
                     'new_version' => $after,
                     'status' => 'upgraded',
                     'message' =>
-                        'Dependency upgraded successfully.',
+                    'Dependency upgraded successfully.',
                 ]);
 
                 return response()->json([
                     'success' => true,
                     'message' =>
-                        "{$package} upgraded successfully.",
+                    "{$package} upgraded successfully.",
                     'old_version' => $before,
                     'new_version' => $after,
-                    'output' => trim(
+                    'output' =>
+                    trim(
                         $result->output()
                     ),
                 ]);
             }
 
             $errorMessage =
-                trim($result->errorOutput());
+                trim(
+                    $result->errorOutput()
+                );
 
             if ($errorMessage === '') {
                 $errorMessage =
-                    trim($result->output());
+                    trim(
+                        $result->output()
+                    );
             }
 
             if ($errorMessage === '') {
@@ -527,7 +748,9 @@ class DependencyController extends Controller
             }
 
             $errorMessage =
-                $this->cleanNpmError($errorMessage);
+                $this->cleanNpmError(
+                    $errorMessage
+                );
 
             DependencyUpgradeHistory::create([
                 'package_name' => $package,
@@ -543,7 +766,6 @@ class DependencyController extends Controller
                 'old_version' => $before,
                 'new_version' => $after,
             ], 500);
-
         } catch (\Throwable $e) {
             $errorMessage =
                 $this->cleanNpmError(
@@ -568,7 +790,9 @@ class DependencyController extends Controller
     }
 
     /**
-     * Get installed package version.
+     * =========================================================
+     * GET INSTALLED VERSION
+     * =========================================================
      */
     private function getInstalledVersion(
         string $package
@@ -584,18 +808,20 @@ class DependencyController extends Controller
                     '--json',
                 ]);
 
-            $output = trim(
-                $result->output()
-            );
+            $output =
+                trim(
+                    $result->output()
+                );
 
             if ($output === '') {
                 return null;
             }
 
-            $data = json_decode(
-                $output,
-                true
-            );
+            $data =
+                json_decode(
+                    $output,
+                    true
+                );
 
             if (! is_array($data)) {
                 return null;
@@ -604,14 +830,15 @@ class DependencyController extends Controller
             return
                 $data['dependencies'][$package]['version']
                 ?? null;
-
         } catch (\Throwable) {
             return null;
         }
     }
 
     /**
-     * Clean npm error.
+     * =========================================================
+     * CLEAN NPM ERROR
+     * =========================================================
      */
     private function cleanNpmError(
         string $error
@@ -646,11 +873,16 @@ class DependencyController extends Controller
             return 'Unable to communicate with npm.';
         }
 
-        return implode(' ', $usefulLines);
+        return implode(
+            ' ',
+            $usefulLines
+        );
     }
 
     /**
-     * Delete history record.
+     * =========================================================
+     * DELETE SINGLE HISTORY
+     * =========================================================
      */
     public function destroy(
         DependencyUpgradeHistory $history
@@ -658,7 +890,9 @@ class DependencyController extends Controller
         $history->delete();
 
         return redirect()
-            ->route('dependencies.index')
+            ->route(
+                'dependencies.index'
+            )
             ->with(
                 'success',
                 'History record deleted successfully.'
@@ -666,17 +900,134 @@ class DependencyController extends Controller
     }
 
     /**
-     * Clear all dependency history.
+     * =========================================================
+     * CLEAR ALL HISTORY
+     * =========================================================
      */
     public function clearHistory(): RedirectResponse
     {
         DependencyUpgradeHistory::query()->delete();
 
         return redirect()
-            ->route('dependencies.index')
+            ->route(
+                'dependencies.index'
+            )
             ->with(
                 'success',
                 'Dependency history cleared successfully.'
             );
+    }
+
+    /**
+     * =========================================================
+     * BULK DELETE HISTORY
+     * =========================================================
+     */
+    public function bulkDelete(
+        Request $request
+    ): RedirectResponse {
+        $data = $request->validate([
+            'history_ids' => [
+                'required',
+                'array',
+                'min:1',
+            ],
+            'history_ids.*' => [
+                'integer',
+                'exists:dependency_upgrade_histories,id',
+            ],
+        ]);
+
+        DependencyUpgradeHistory::whereIn(
+            'id',
+            $data['history_ids']
+        )->delete();
+
+        return redirect()
+            ->route(
+                'dependencies.index'
+            )
+            ->with(
+                'success',
+                count($data['history_ids'])
+                    . ' history record(s) deleted successfully.'
+            );
+    }
+
+    /**
+     * =========================================================
+     * EXPORT HISTORY CSV
+     * =========================================================
+     */
+    public function exportHistory(
+        Request $request
+    ): StreamedResponse {
+        $histories =
+            DependencyUpgradeHistory::query()
+            ->latest()
+            ->get();
+
+        $fileName =
+            'dependency-upgrade-history-'
+            . now()->format('Y-m-d-H-i-s')
+            . '.csv';
+
+        return response()->streamDownload(
+            function () use ($histories) {
+                $handle = fopen(
+                    'php://output',
+                    'w'
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | CSV Header
+                |--------------------------------------------------------------------------
+                */
+                fputcsv(
+                    $handle,
+                    [
+                        'ID',
+                        'Package',
+                        'Old Version',
+                        'New Version',
+                        'Status',
+                        'Message',
+                        'Date',
+                    ]
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | CSV Rows
+                |--------------------------------------------------------------------------
+                */
+                foreach ($histories as $history) {
+                    fputcsv(
+                        $handle,
+                        [
+                            $history->id,
+                            $history->package_name,
+                            $history->old_version,
+                            $history->new_version,
+                            $history->status,
+                            $history->message,
+                            optional(
+                                $history->created_at
+                            )->format(
+                                'Y-m-d H:i:s'
+                            ),
+                        ]
+                    );
+                }
+
+                fclose($handle);
+            },
+            $fileName,
+            [
+                'Content-Type' =>
+                'text/csv; charset=UTF-8',
+            ]
+        );
     }
 }
