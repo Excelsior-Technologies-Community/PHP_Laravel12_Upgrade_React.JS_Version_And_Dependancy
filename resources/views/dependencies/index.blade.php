@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -12,11 +13,12 @@
         name="csrf-token"
         content="{{ csrf_token() }}">
 
-    <title>React Dependency Integrity Manager</title>
+    <title>React Dependency Manager</title>
 
     @vite(['resources/css/app.css'])
 
     <style>
+
         body {
             margin: 0;
             background: #f8fafc;
@@ -29,12 +31,16 @@
                 sans-serif;
         }
 
+        * {
+            box-sizing: border-box;
+        }
+
         .page-shell {
             min-height: 100vh;
         }
 
         .page-inner {
-            max-width: 1200px;
+            max-width: 1250px;
             margin: 0 auto;
             padding: 3rem 1.25rem;
         }
@@ -44,7 +50,8 @@
             background: #ffffff;
             border: 1px solid #e2e8f0;
             border-radius: 28px;
-            box-shadow: 0 20px 70px rgba(15, 23, 42, .08);
+            box-shadow:
+                0 20px 70px rgba(15, 23, 42, .08);
         }
 
         .hero {
@@ -81,6 +88,7 @@
             align-items: center;
             gap: 1rem;
             margin-bottom: 1.5rem;
+            flex-wrap: wrap;
         }
 
         .panel-header h2 {
@@ -116,6 +124,22 @@
             background: #b91c1c;
         }
 
+        .button-warning {
+            background: #d97706;
+        }
+
+        .button-warning:hover {
+            background: #b45309;
+        }
+
+        .button-success {
+            background: #059669;
+        }
+
+        .button-success:hover {
+            background: #047857;
+        }
+
         .button-secondary {
             border: 1px solid #cbd5e1;
             background: white;
@@ -132,62 +156,122 @@
             transform: none;
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Status
+        |--------------------------------------------------------------------------
+        */
+
         .status {
             padding: 1rem 1.2rem;
             border-radius: 18px;
             margin-bottom: 1.5rem;
-            display: none;
         }
 
         .status.success {
-            display: block;
             background: #ecfdf5;
             color: #065f46;
             border: 1px solid #a7f3d0;
         }
 
         .status.error {
-            display: block;
             background: #fef2f2;
             color: #991b1b;
             border: 1px solid #fecaca;
         }
 
         .status.warning {
-            display: block;
             background: #fffbeb;
             color: #92400e;
             border: 1px solid #fde68a;
         }
 
-        .summary-grid {
+        /*
+        |--------------------------------------------------------------------------
+        | Statistics
+        |--------------------------------------------------------------------------
+        */
+
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns:
+                repeat(4, 1fr);
             gap: 1rem;
             margin-bottom: 1.5rem;
         }
 
-        .summary-card {
-            background: #f8fafc;
+        .stat-card {
+            background: #ffffff;
             border: 1px solid #e2e8f0;
-            border-radius: 20px;
-            padding: 1.25rem;
+            border-radius: 22px;
+            padding: 1.4rem;
+            box-shadow:
+                0 10px 30px rgba(15, 23, 42, .05);
         }
 
-        .summary-label {
+        .stat-label {
             color: #64748b;
             font-size: .8rem;
-            font-weight: 700;
+            font-weight: 800;
             text-transform: uppercase;
             letter-spacing: .04em;
         }
 
-        .summary-value {
+        .stat-value {
             display: block;
-            margin-top: .4rem;
-            font-size: 2rem;
-            font-weight: 800;
+            margin-top: .45rem;
+            font-size: 2.1rem;
+            font-weight: 900;
         }
+
+        .stat-description {
+            display: block;
+            margin-top: .25rem;
+            color: #64748b;
+            font-size: .85rem;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Search
+        |--------------------------------------------------------------------------
+        */
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns:
+                minmax(250px, 1fr)
+                180px
+                180px
+                180px;
+            gap: .75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 16px;
+            padding: .85rem 1rem;
+            background: white;
+            color: #0f172a;
+            font-size: .95rem;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow:
+                0 0 0 4px rgba(99, 102, 241, .12);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Dependency List
+        |--------------------------------------------------------------------------
+        */
 
         .dependency-list {
             display: grid;
@@ -199,6 +283,10 @@
             background: #f8fafc;
             border-radius: 22px;
             padding: 1.25rem;
+        }
+
+        .dependency-card.hidden {
+            display: none;
         }
 
         .dependency-top {
@@ -251,38 +339,14 @@
             margin-top: 1rem;
             display: flex;
             justify-content: flex-end;
+            gap: .5rem;
         }
 
-        .empty {
-            padding: 2rem;
-            text-align: center;
-            color: #64748b;
-            border: 1px dashed #cbd5e1;
-            border-radius: 20px;
-        }
-
-        .history-table-wrapper {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 1rem .75rem;
-            border-bottom: 1px solid #e2e8f0;
-            text-align: left;
-            white-space: nowrap;
-        }
-
-        th {
-            font-size: .8rem;
-            color: #64748b;
-            text-transform: uppercase;
-        }
+        /*
+        |--------------------------------------------------------------------------
+        | Badge
+        |--------------------------------------------------------------------------
+        */
 
         .badge {
             display: inline-flex;
@@ -312,20 +376,146 @@
             color: #1e40af;
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Pagination
+        |--------------------------------------------------------------------------
+        */
+
+        .pagination-wrapper {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: .4rem;
+            flex-wrap: wrap;
+        }
+
+        .pagination-button {
+            min-width: 40px;
+            height: 40px;
+            padding: 0 .7rem;
+            border: 1px solid #cbd5e1;
+            background: white;
+            color: #334155;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .pagination-button:hover {
+            background: #f1f5f9;
+        }
+
+        .pagination-button.active {
+            background: #4338ca;
+            color: white;
+            border-color: #4338ca;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | History
+        |--------------------------------------------------------------------------
+        */
+
+        .history-filter-grid {
+            display: grid;
+            grid-template-columns:
+                minmax(250px, 1fr)
+                180px
+                180px
+                180px;
+            gap: .75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .history-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem;
+        }
+
+        .history-table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 1rem .75rem;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        th {
+            font-size: .8rem;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Empty
+        |--------------------------------------------------------------------------
+        */
+
+        .empty {
+            padding: 2rem;
+            text-align: center;
+            color: #64748b;
+            border: 1px dashed #cbd5e1;
+            border-radius: 20px;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Loading
+        |--------------------------------------------------------------------------
+        */
+
         .loading {
             display: none;
             color: #64748b;
             margin-bottom: 1rem;
         }
 
-        @media (max-width: 800px) {
-            .summary-grid {
-                grid-template-columns: repeat(2, 1fr);
+        /*
+        |--------------------------------------------------------------------------
+        | Responsive
+        |--------------------------------------------------------------------------
+        */
+
+        @media (max-width: 1000px) {
+
+            .stats-grid {
+                grid-template-columns:
+                    repeat(2, 1fr);
             }
+
+            .filter-grid,
+            .history-filter-grid {
+                grid-template-columns:
+                    repeat(2, 1fr);
+            }
+
         }
 
         @media (max-width: 600px) {
-            .summary-grid,
+
+            .stats-grid,
+            .filter-grid,
+            .history-filter-grid,
             .dependency-info {
                 grid-template-columns: 1fr;
             }
@@ -342,174 +532,413 @@
             .panel {
                 padding: 1.25rem;
             }
+
+            .page-inner {
+                padding: 1.25rem;
+            }
+
         }
+
     </style>
+
 </head>
 
 <body>
 
 <div class="page-shell">
 
-    <div class="page-inner">
+<div class="page-inner">
 
-        <!-- HERO -->
-        <div class="hero">
+    <!-- =====================================================
+         HERO
+    ====================================================== -->
 
-            <h1>React Dependency Manager</h1>
+    <div class="hero">
 
-            <p>
-                Verify your locally installed React and npm dependencies,
-                detect missing or invalid packages, upgrade dependencies,
-                and maintain an upgrade history.
-            </p>
+        <h1>
+            React Dependency Manager
+        </h1>
 
-            <div class="hero-actions">
+        <p>
+            Verify locally installed React and npm dependencies,
+            detect missing or invalid packages, upgrade dependencies,
+            search and filter packages, and maintain upgrade history.
+        </p>
 
-                <button
-                    type="button"
-                    id="checkButton"
-                    class="button">
-                    Run Integrity Check
-                </button>
+        <div class="hero-actions">
 
-                <a
-                    href="{{ route('products.index') }}"
-                    class="button button-secondary">
-                    Product Management
-                </a>
+            <button
+                type="button"
+                id="checkButton"
+                class="button">
+
+                Run Integrity Check
+
+            </button>
+
+            <a
+                href="{{ route('products.index') }}"
+                class="button button-secondary">
+
+                Product Management
+
+            </a>
+
+            <a
+                href="{{ route('dependencies.history.export') }}"
+                class="button button-success">
+
+                Export History CSV
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         SESSION MESSAGE
+    ====================================================== -->
+
+    @if (session('success'))
+
+        <div class="status success">
+            {{ session('success') }}
+        </div>
+
+    @endif
+
+
+    <!-- =====================================================
+         AJAX STATUS
+    ====================================================== -->
+
+    <div
+        id="statusMessage"
+        class="status"
+        style="display:none;">
+    </div>
+
+
+    <!-- =====================================================
+         STATISTICS
+    ====================================================== -->
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+
+            <span class="stat-label">
+                Total History
+            </span>
+
+            <span class="stat-value">
+                {{ $totalHistory }}
+            </span>
+
+            <span class="stat-description">
+                All upgrade attempts
+            </span>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <span class="stat-label">
+                Successful
+            </span>
+
+            <span class="stat-value">
+                {{ $successfulUpgrades }}
+            </span>
+
+            <span class="stat-description">
+                Successful upgrades
+            </span>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <span class="stat-label">
+                Failed
+            </span>
+
+            <span class="stat-value">
+                {{ $failedUpgrades }}
+            </span>
+
+            <span class="stat-description">
+                Failed upgrades
+            </span>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <span class="stat-label">
+                Today
+            </span>
+
+            <span class="stat-value">
+                {{ $todayUpgrades }}
+            </span>
+
+            <span class="stat-description">
+                Today's upgrades
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         DEPENDENCY INTEGRITY
+    ====================================================== -->
+
+    <div class="panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <h2>
+                    Dependency Integrity
+                </h2>
+
+                <p style="color:#64748b;">
+                    Local node_modules health status
+                </p>
 
             </div>
 
         </div>
 
 
-        <!-- STATUS -->
+        <!-- =================================================
+             DEPENDENCY FILTERS
+        ================================================== -->
+
+        <div class="filter-grid">
+
+            <input
+                type="text"
+                id="dependencySearch"
+                class="form-input"
+                placeholder="Search dependency...">
+
+
+            <select
+                id="dependencyStatus"
+                class="form-select">
+
+                <option value="all">
+                    All Status
+                </option>
+
+                <option value="installed">
+                    Installed
+                </option>
+
+                <option value="missing">
+                    Missing
+                </option>
+
+                <option value="invalid">
+                    Invalid
+                </option>
+
+            </select>
+
+
+            <select
+                id="dependencySort"
+                class="form-select">
+
+                <option value="name-asc">
+                    Name A-Z
+                </option>
+
+                <option value="name-desc">
+                    Name Z-A
+                </option>
+
+                <option value="status">
+                    Status
+                </option>
+
+            </select>
+
+
+            <button
+                type="button"
+                id="resetFilters"
+                class="button button-secondary">
+
+                Reset Filters
+
+            </button>
+
+        </div>
+
+
         <div
-            id="statusMessage"
-            class="status">
+            id="loading"
+            class="loading">
+
+            Checking locally installed dependencies...
+
         </div>
 
 
-        <!-- DEPENDENCY INTEGRITY -->
-        <div class="panel">
+        <!-- =================================================
+             SUMMARY
+        ================================================== -->
 
-            <div class="panel-header">
+        <div
+            id="summaryGrid"
+            class="stats-grid"
+            style="display:none;">
 
-                <div>
-                    <h2>Dependency Integrity</h2>
-                </div>
+            <div class="stat-card">
 
-            </div>
+                <span class="stat-label">
+                    Declared
+                </span>
 
-
-            <div
-                id="loading"
-                class="loading">
-                Checking local dependency installation...
-            </div>
-
-
-            <!-- SUMMARY -->
-            <div
-                id="summaryGrid"
-                class="summary-grid"
-                style="display:none;">
-
-                <div class="summary-card">
-
-                    <span class="summary-label">
-                        Declared
-                    </span>
-
-                    <span
-                        id="declaredCount"
-                        class="summary-value">
-                        0
-                    </span>
-
-                </div>
-
-
-                <div class="summary-card">
-
-                    <span class="summary-label">
-                        Installed
-                    </span>
-
-                    <span
-                        id="installedCount"
-                        class="summary-value">
-                        0
-                    </span>
-
-                </div>
-
-
-                <div class="summary-card">
-
-                    <span class="summary-label">
-                        Missing
-                    </span>
-
-                    <span
-                        id="missingCount"
-                        class="summary-value">
-                        0
-                    </span>
-
-                </div>
-
-
-                <div class="summary-card">
-
-                    <span class="summary-label">
-                        Invalid
-                    </span>
-
-                    <span
-                        id="invalidCount"
-                        class="summary-value">
-                        0
-                    </span>
-
-                </div>
+                <span
+                    id="declaredCount"
+                    class="stat-value">
+                    0
+                </span>
 
             </div>
 
 
-            <div
-                id="dependencyList"
-                class="dependency-list">
+            <div class="stat-card">
 
-                <div class="empty">
+                <span class="stat-label">
+                    Installed
+                </span>
 
-                    <strong>
-                        Dependency check not run yet
-                    </strong>
+                <span
+                    id="installedCount"
+                    class="stat-value">
+                    0
+                </span>
 
-                    <br><br>
+            </div>
 
-                    Click
-                    <strong>Run Integrity Check</strong>
-                    to verify your locally installed npm packages.
 
-                </div>
+            <div class="stat-card">
+
+                <span class="stat-label">
+                    Missing
+                </span>
+
+                <span
+                    id="missingCount"
+                    class="stat-value">
+                    0
+                </span>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <span class="stat-label">
+                    Invalid
+                </span>
+
+                <span
+                    id="invalidCount"
+                    class="stat-value">
+                    0
+                </span>
 
             </div>
 
         </div>
 
 
-        <!-- HISTORY -->
-        <div class="panel">
+        <!-- =================================================
+             DEPENDENCY LIST
+        ================================================== -->
 
-            <div class="panel-header">
+        <div
+            id="dependencyList"
+            class="dependency-list">
 
-                <div>
-                    <h2>Upgrade History</h2>
-                </div>
+            <div class="empty">
 
-                @if ($histories->count() > 0)
+                <strong>
+                    Dependency check not run yet
+                </strong>
+
+                <br><br>
+
+                Click
+                <strong>Run Integrity Check</strong>
+                to verify your locally installed npm packages.
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             DEPENDENCY PAGINATION
+        ================================================== -->
+
+        <div
+            id="dependencyPagination"
+            class="pagination-wrapper">
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         HISTORY
+    ====================================================== -->
+
+    <div class="panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <h2>
+                    Upgrade History
+                </h2>
+
+                <p style="color:#64748b;">
+                    Track dependency upgrade activity
+                </p>
+
+            </div>
+
+            <div class="history-actions">
+
+                @if ($histories->total() > 0)
+
+                    <a
+                        href="{{ route('dependencies.history.export') }}"
+                        class="button button-success">
+
+                        Export CSV
+
+                    </a>
+
+                @endif
+
+                @if ($totalHistory > 0)
 
                     <form
                         action="{{ route('dependencies.history.clear') }}"
@@ -523,7 +952,7 @@
                             type="submit"
                             class="button button-danger">
 
-                            Clear History
+                            Clear All
 
                         </button>
 
@@ -533,17 +962,205 @@
 
             </div>
 
+        </div>
 
-            @if (session('success'))
 
-                <div class="status success">
-                    {{ session('success') }}
+        <!-- =================================================
+             HISTORY FILTERS
+        ================================================== -->
+
+        <form
+            method="GET"
+            action="{{ route('dependencies.index') }}">
+
+            <div class="history-filter-grid">
+
+                <input
+                    type="text"
+                    name="history_search"
+                    value="{{ request('history_search') }}"
+                    class="form-input"
+                    placeholder="Search history...">
+
+
+                <select
+                    name="history_status"
+                    class="form-select">
+
+                    <option value="">
+                        All Status
+                    </option>
+
+                    <option
+                        value="upgraded"
+                        @selected(request('history_status') === 'upgraded')>
+
+                        Upgraded
+
+                    </option>
+
+                    <option
+                        value="failed"
+                        @selected(request('history_status') === 'failed')>
+
+                        Failed
+
+                    </option>
+
+                </select>
+
+
+                <select
+                    name="history_sort"
+                    class="form-select">
+
+                    <option
+                        value="created_at"
+                        @selected(request('history_sort', 'created_at') === 'created_at')>
+
+                        Date
+
+                    </option>
+
+                    <option
+                        value="package_name"
+                        @selected(request('history_sort') === 'package_name')>
+
+                        Package
+
+                    </option>
+
+                    <option
+                        value="status"
+                        @selected(request('history_sort') === 'status')>
+
+                        Status
+
+                    </option>
+
+                    <option
+                        value="old_version"
+                        @selected(request('history_sort') === 'old_version')>
+
+                        Old Version
+
+                    </option>
+
+                    <option
+                        value="new_version"
+                        @selected(request('history_sort') === 'new_version')>
+
+                        New Version
+
+                    </option>
+
+                </select>
+
+
+                <select
+                    name="history_order"
+                    class="form-select">
+
+                    <option
+                        value="desc"
+                        @selected(request('history_order', 'desc') === 'desc')>
+
+                        Descending
+
+                    </option>
+
+                    <option
+                        value="asc"
+                        @selected(request('history_order') === 'asc')>
+
+                        Ascending
+
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div style="display:flex; gap:.5rem; margin-bottom:1.5rem;">
+
+                <button
+                    type="submit"
+                    class="button">
+
+                    Apply Filters
+
+                </button>
+
+                <a
+                    href="{{ route('dependencies.index') }}"
+                    class="button button-secondary">
+
+                    Reset
+
+                </a>
+
+            </div>
+
+        </form>
+
+
+        <!-- =================================================
+             BULK DELETE FORM
+        ================================================== -->
+
+        @if ($histories->count())
+
+            <form
+                id="bulkDeleteForm"
+                action="{{ route('dependencies.history.bulk-delete') }}"
+                method="POST">
+
+                @csrf
+                @method('DELETE')
+
+
+                <div
+                    style="
+                        display:flex;
+                        justify-content:space-between;
+                        align-items:center;
+                        gap:1rem;
+                        margin-bottom:1rem;
+                        flex-wrap:wrap;
+                    ">
+
+                    <label
+                        style="
+                            display:flex;
+                            align-items:center;
+                            gap:.5rem;
+                            font-weight:700;
+                        ">
+
+                        <input
+                            type="checkbox"
+                            id="selectAll"
+                            class="checkbox">
+
+                        Select All
+
+                    </label>
+
+
+                    <button
+                        type="submit"
+                        id="bulkDeleteButton"
+                        class="button button-danger"
+                        disabled
+                        onclick="return confirm('Delete selected history records?')">
+
+                        Delete Selected
+
+                    </button>
+
                 </div>
 
-            @endif
-
-
-            @if ($histories->count())
 
                 <div class="history-table-wrapper">
 
@@ -552,15 +1169,39 @@
                         <thead>
 
                         <tr>
-                            <th>Package</th>
-                            <th>Old Version</th>
-                            <th>New Version</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                            <th>Action</th>
+
+                            <th>
+                                #
+                            </th>
+
+                            <th>
+                                Package
+                            </th>
+
+                            <th>
+                                Old Version
+                            </th>
+
+                            <th>
+                                New Version
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th>
+                                Date
+                            </th>
+
+                            <th>
+                                Action
+                            </th>
+
                         </tr>
 
                         </thead>
+
 
                         <tbody>
 
@@ -569,18 +1210,34 @@
                             <tr>
 
                                 <td>
+
+                                    <input
+                                        type="checkbox"
+                                        name="history_ids[]"
+                                        value="{{ $history->id }}"
+                                        class="history-checkbox checkbox">
+
+                                </td>
+
+
+                                <td>
+
                                     <strong>
                                         {{ $history->package_name }}
                                     </strong>
+
                                 </td>
+
 
                                 <td>
                                     {{ $history->old_version ?? '-' }}
                                 </td>
 
+
                                 <td>
                                     {{ $history->new_version ?? '-' }}
                                 </td>
+
 
                                 <td>
 
@@ -606,9 +1263,13 @@
 
                                 </td>
 
+
                                 <td>
+
                                     {{ $history->created_at->format('d M Y H:i') }}
+
                                 </td>
+
 
                                 <td>
 
@@ -642,54 +1303,185 @@
 
                 </div>
 
-            @else
+            </form>
 
-                <div class="empty">
-                    No dependency upgrade history yet.
-                </div>
 
-            @endif
+            <!-- =================================================
+                 HISTORY PAGINATION
+            ================================================== -->
 
-        </div>
+            <div class="pagination-wrapper">
+
+                @if ($histories->onFirstPage())
+
+                    <span class="pagination-button">
+                        Previous
+                    </span>
+
+                @else
+
+                    <a
+                        href="{{ $histories->previousPageUrl() }}"
+                        class="pagination-button">
+
+                        Previous
+
+                    </a>
+
+                @endif
+
+
+                @for (
+                    $page = 1;
+                    $page <= $histories->lastPage();
+                    $page++
+                )
+
+                    @if ($page == $histories->currentPage())
+
+                        <span class="pagination-button active">
+                            {{ $page }}
+                        </span>
+
+                    @else
+
+                        <a
+                            href="{{ $histories->url($page) }}"
+                            class="pagination-button">
+
+                            {{ $page }}
+
+                        </a>
+
+                    @endif
+
+                @endfor
+
+
+                @if ($histories->hasMorePages())
+
+                    <a
+                        href="{{ $histories->nextPageUrl() }}"
+                        class="pagination-button">
+
+                        Next
+
+                    </a>
+
+                @else
+
+                    <span class="pagination-button">
+                        Next
+                    </span>
+
+                @endif
+
+            </div>
+
+        @else
+
+            <div class="empty">
+
+                No dependency upgrade history found.
+
+            </div>
+
+        @endif
 
     </div>
+
+</div>
 
 </div>
 
 
 <script>
 
+    /*
+    |--------------------------------------------------------------------------
+    | Elements
+    |--------------------------------------------------------------------------
+    */
+
     const checkButton =
-        document.getElementById('checkButton');
+        document.getElementById(
+            'checkButton'
+        );
 
     const dependencyList =
-        document.getElementById('dependencyList');
+        document.getElementById(
+            'dependencyList'
+        );
+
+    const dependencyPagination =
+        document.getElementById(
+            'dependencyPagination'
+        );
 
     const loading =
-        document.getElementById('loading');
+        document.getElementById(
+            'loading'
+        );
 
     const statusMessage =
-        document.getElementById('statusMessage');
+        document.getElementById(
+            'statusMessage'
+        );
 
     const summaryGrid =
-        document.getElementById('summaryGrid');
+        document.getElementById(
+            'summaryGrid'
+        );
 
     const declaredCount =
-        document.getElementById('declaredCount');
+        document.getElementById(
+            'declaredCount'
+        );
 
     const installedCount =
-        document.getElementById('installedCount');
+        document.getElementById(
+            'installedCount'
+        );
 
     const missingCount =
-        document.getElementById('missingCount');
+        document.getElementById(
+            'missingCount'
+        );
 
     const invalidCount =
-        document.getElementById('invalidCount');
+        document.getElementById(
+            'invalidCount'
+        );
 
+    const dependencySearch =
+        document.getElementById(
+            'dependencySearch'
+        );
+
+    const dependencyStatus =
+        document.getElementById(
+            'dependencyStatus'
+        );
+
+    const dependencySort =
+        document.getElementById(
+            'dependencySort'
+        );
+
+    const resetFilters =
+        document.getElementById(
+            'resetFilters'
+        );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | URLs
+    |--------------------------------------------------------------------------
+    */
 
     const checkUrl =
         @json(route('dependencies.check'));
-
 
     const upgradeBaseUrl =
         @json(url('/dependencies'));
@@ -697,7 +1489,20 @@
 
     /*
     |--------------------------------------------------------------------------
-    | Status
+    | Global dependency data
+    |--------------------------------------------------------------------------
+    */
+
+    let allDependencies = [];
+
+    let currentDependencyPage = 1;
+
+    const dependencyPerPage = 5;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Show status
     |--------------------------------------------------------------------------
     */
 
@@ -711,6 +1516,9 @@
 
         statusMessage.className =
             `status ${type}`;
+
+        statusMessage.style.display =
+            'block';
     }
 
 
@@ -723,7 +1531,9 @@
     function escapeHtml(value) {
 
         const div =
-            document.createElement('div');
+            document.createElement(
+                'div'
+            );
 
         div.textContent =
             value ?? '';
@@ -738,7 +1548,9 @@
     |--------------------------------------------------------------------------
     */
 
-    function renderSummary(summary) {
+    function renderSummary(
+        summary
+    ) {
 
         summaryGrid.style.display =
             'grid';
@@ -759,28 +1571,226 @@
 
     /*
     |--------------------------------------------------------------------------
+    | Filter dependencies
+    |--------------------------------------------------------------------------
+    */
+
+    function getFilteredDependencies() {
+
+        const search =
+            dependencySearch
+                .value
+                .trim()
+                .toLowerCase();
+
+        const status =
+            dependencyStatus.value;
+
+        let filtered =
+            allDependencies.filter(
+                dependency => {
+
+                    const matchesSearch =
+                        dependency.name
+                            .toLowerCase()
+                            .includes(search);
+
+                    const matchesStatus =
+                        status === 'all'
+                        ||
+                        dependency.status === status;
+
+                    return (
+                        matchesSearch
+                        &&
+                        matchesStatus
+                    );
+                }
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Sorting
+        |--------------------------------------------------------------------------
+        */
+
+        const sort =
+            dependencySort.value;
+
+        if (sort === 'name-asc') {
+
+            filtered.sort(
+                (a, b) =>
+                    a.name.localeCompare(
+                        b.name
+                    )
+            );
+
+        } else if (sort === 'name-desc') {
+
+            filtered.sort(
+                (a, b) =>
+                    b.name.localeCompare(
+                        a.name
+                    )
+            );
+
+        } else if (sort === 'status') {
+
+            const priority = {
+                missing: 1,
+                invalid: 2,
+                installed: 3
+            };
+
+            filtered.sort(
+                (a, b) =>
+                    (
+                        priority[a.status]
+                        -
+                        priority[b.status]
+                    )
+            );
+        }
+
+        return filtered;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Render dependency pagination
+    |--------------------------------------------------------------------------
+    */
+
+    function renderDependencyPagination(
+        total
+    ) {
+
+        const totalPages =
+            Math.ceil(
+                total /
+                dependencyPerPage
+            );
+
+        dependencyPagination.innerHTML =
+            '';
+
+        if (totalPages <= 1) {
+            return;
+        }
+
+        for (
+            let page = 1;
+            page <= totalPages;
+            page++
+        ) {
+
+            const button =
+                document.createElement(
+                    'button'
+                );
+
+            button.type =
+                'button';
+
+            button.className =
+                'pagination-button'
+                +
+                (
+                    page ===
+                    currentDependencyPage
+                        ? ' active'
+                        : ''
+                );
+
+            button.textContent =
+                page;
+
+            button.addEventListener(
+                'click',
+                () => {
+
+                    currentDependencyPage =
+                        page;
+
+                    renderDependencies();
+                }
+            );
+
+            dependencyPagination.appendChild(
+                button
+            );
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
     | Render dependencies
     |--------------------------------------------------------------------------
     */
 
-    function renderDependencies(
-        dependencies
-    ) {
+    function renderDependencies() {
 
-        if (!dependencies.length) {
+        const filtered =
+            getFilteredDependencies();
+
+        const total =
+            filtered.length;
+
+        const totalPages =
+            Math.ceil(
+                total /
+                dependencyPerPage
+            );
+
+        if (
+            currentDependencyPage >
+            totalPages
+        ) {
+            currentDependencyPage =
+                Math.max(
+                    1,
+                    totalPages
+                );
+        }
+
+        const start =
+            (
+                currentDependencyPage
+                -
+                1
+            )
+            *
+            dependencyPerPage;
+
+        const paginated =
+            filtered.slice(
+                start,
+                start +
+                dependencyPerPage
+            );
+
+
+        if (!paginated.length) {
 
             dependencyList.innerHTML = `
                 <div class="empty">
-                    No dependencies were found.
+                    No dependencies match your search/filter.
                 </div>
             `;
+
+            dependencyPagination.innerHTML =
+                '';
 
             return;
         }
 
 
         dependencyList.innerHTML =
-            dependencies.map(
+            paginated.map(
                 dependency => {
 
                     let badgeClass =
@@ -825,7 +1835,7 @@
                                     Upgrade to Latest
 
                                 </button>
-                              `
+                            `
                             : '';
 
 
@@ -837,17 +1847,29 @@
                                 <div>
 
                                     <div class="dependency-name">
-                                        ${escapeHtml(dependency.name)}
+
+                                        ${escapeHtml(
+                                            dependency.name
+                                        )}
+
                                     </div>
 
                                     <div class="dependency-type">
-                                        ${escapeHtml(dependency.type)}
+
+                                        ${escapeHtml(
+                                            dependency.type
+                                        )}
+
                                     </div>
 
                                 </div>
 
-                                <span class="badge ${badgeClass}">
+
+                                <span
+                                    class="badge ${badgeClass}">
+
                                     ${badgeText}
+
                                 </span>
 
                             </div>
@@ -862,7 +1884,11 @@
                                     </span>
 
                                     <span class="info-value">
-                                        ${escapeHtml(dependency.required)}
+
+                                        ${escapeHtml(
+                                            dependency.required
+                                        )}
+
                                     </span>
 
                                 </div>
@@ -875,9 +1901,11 @@
                                     </span>
 
                                     <span class="info-value">
+
                                         ${escapeHtml(
                                             dependency.installed ?? '-'
                                         )}
+
                                     </span>
 
                                 </div>
@@ -898,29 +1926,44 @@
             ).join('');
 
 
+        /*
+        |--------------------------------------------------------------------------
+        | Upgrade buttons
+        |--------------------------------------------------------------------------
+        */
+
         document
-            .querySelectorAll('.upgrade-button')
-            .forEach(button => {
+            .querySelectorAll(
+                '.upgrade-button'
+            )
+            .forEach(
+                button => {
 
-                button.addEventListener(
-                    'click',
-                    function () {
+                    button.addEventListener(
+                        'click',
+                        function () {
 
-                        upgradeDependency(
-                            this.dataset.package,
-                            this
-                        );
+                            upgradeDependency(
+                                this.dataset.package,
+                                this
+                            );
 
-                    }
-                );
+                        }
+                    );
 
-            });
+                }
+            );
+
+
+        renderDependencyPagination(
+            total
+        );
     }
 
 
     /*
     |--------------------------------------------------------------------------
-    | Run local integrity check
+    | Run dependency check
     |--------------------------------------------------------------------------
     */
 
@@ -972,12 +2015,14 @@
 
 
             if (
-                !response.ok ||
+                !response.ok
+                ||
                 !data.success
             ) {
 
                 throw new Error(
-                    data.message ||
+                    data.message
+                    ||
                     'Dependency integrity check failed.'
                 );
             }
@@ -988,13 +2033,19 @@
             );
 
 
-            renderDependencies(
+            allDependencies =
                 Array.isArray(
                     data.dependencies
                 )
                     ? data.dependencies
-                    : []
-            );
+                    : [];
+
+
+            currentDependencyPage =
+                1;
+
+
+            renderDependencies();
 
 
             if (data.healthy) {
@@ -1023,7 +2074,8 @@
 
 
             showStatus(
-                error.message ||
+                error.message
+                ||
                 'Dependency integrity check failed.',
                 'error'
             );
@@ -1090,7 +2142,9 @@
                     .querySelector(
                         'meta[name="csrf-token"]'
                     )
-                    ?.getAttribute('content');
+                    ?.getAttribute(
+                        'content'
+                    );
 
 
             const response =
@@ -1108,10 +2162,13 @@
                                 'application/json',
 
                             'X-CSRF-TOKEN':
-                                csrfToken || '',
+                                csrfToken
+                                ||
+                                '',
 
                             'X-Requested-With':
                                 'XMLHttpRequest'
+
                         }
                     }
                 );
@@ -1122,20 +2179,24 @@
 
 
             if (
-                !response.ok ||
+                !response.ok
+                ||
                 !data.success
             ) {
 
                 throw new Error(
-                    data.message ||
+                    data.message
+                    ||
                     `Failed to upgrade ${packageName}.`
                 );
             }
 
 
             showStatus(
-                `${packageName} upgraded from ` +
-                `${data.old_version ?? '-'} to ` +
+                `${packageName} upgraded from `
+                +
+                `${data.old_version ?? '-'} to `
+                +
                 `${data.new_version ?? '-'}.`,
                 'success'
             );
@@ -1146,7 +2207,9 @@
 
             setTimeout(
                 () => {
+
                     window.location.reload();
+
                 },
                 800
             );
@@ -1155,7 +2218,8 @@
         } catch (error) {
 
             showStatus(
-                error.message ||
+                error.message
+                ||
                 `Failed to upgrade ${packageName}.`,
                 'error'
             );
@@ -1172,6 +2236,91 @@
 
     /*
     |--------------------------------------------------------------------------
+    | Search
+    |--------------------------------------------------------------------------
+    */
+
+    dependencySearch.addEventListener(
+        'input',
+        () => {
+
+            currentDependencyPage =
+                1;
+
+            renderDependencies();
+
+        }
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Status Filter
+    |--------------------------------------------------------------------------
+    */
+
+    dependencyStatus.addEventListener(
+        'change',
+        () => {
+
+            currentDependencyPage =
+                1;
+
+            renderDependencies();
+
+        }
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sort
+    |--------------------------------------------------------------------------
+    */
+
+    dependencySort.addEventListener(
+        'change',
+        () => {
+
+            currentDependencyPage =
+                1;
+
+            renderDependencies();
+
+        }
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reset
+    |--------------------------------------------------------------------------
+    */
+
+    resetFilters.addEventListener(
+        'click',
+        () => {
+
+            dependencySearch.value =
+                '';
+
+            dependencyStatus.value =
+                'all';
+
+            dependencySort.value =
+                'name-asc';
+
+            currentDependencyPage =
+                1;
+
+            renderDependencies();
+
+        }
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
     | Check button
     |--------------------------------------------------------------------------
     */
@@ -1179,6 +2328,84 @@
     checkButton.addEventListener(
         'click',
         checkDependencies
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Select All
+    |--------------------------------------------------------------------------
+    */
+
+    const selectAll =
+        document.getElementById(
+            'selectAll'
+        );
+
+    const historyCheckboxes =
+        document.querySelectorAll(
+            '.history-checkbox'
+        );
+
+    const bulkDeleteButton =
+        document.getElementById(
+            'bulkDeleteButton'
+        );
+
+
+    function updateBulkDeleteButton() {
+
+        const selected =
+            document.querySelectorAll(
+                '.history-checkbox:checked'
+            ).length;
+
+        if (!bulkDeleteButton) {
+            return;
+        }
+
+        bulkDeleteButton.disabled =
+            selected === 0;
+
+        bulkDeleteButton.textContent =
+            selected > 0
+                ? `Delete Selected (${selected})`
+                : 'Delete Selected';
+    }
+
+
+    if (selectAll) {
+
+        selectAll.addEventListener(
+            'change',
+            function () {
+
+                historyCheckboxes.forEach(
+                    checkbox => {
+
+                        checkbox.checked =
+                            this.checked;
+
+                    }
+                );
+
+                updateBulkDeleteButton();
+
+            }
+        );
+
+    }
+
+
+    historyCheckboxes.forEach(
+        checkbox => {
+
+            checkbox.addEventListener(
+                'change',
+                updateBulkDeleteButton
+            );
+
+        }
     );
 
 </script>
